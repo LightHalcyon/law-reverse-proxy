@@ -13,7 +13,7 @@ function generateId (len) {
 
 const host = window.location.href.replace("http://", '');
 
-const url = 'http://localhost/upload';
+const url = 'http://localhost:23061/';
 
 var id = ""
 

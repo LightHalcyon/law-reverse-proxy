@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 )
 
@@ -132,7 +133,7 @@ func upload(c *gin.Context) {
 	c.JSON(http.StatusOK, appError{
 		Code: http.StatusOK,
 		// Message:	os.getenv("PROXYURL") + "/download/" + key,
-		Message: "http://localhost/download/" + key,
+		Message: "http://localhost:22006/download/" + key,
 	})
 	return
 }
@@ -163,10 +164,22 @@ func main() {
 	router.Use(static.Serve("/static", static.LocalFile("static", true)))
 	router.LoadHTMLGlob("templates/*")
 	router.GET("/", func(c *gin.Context) {
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, X-Routing-Key, Host")
 		c.HTML(http.StatusOK, "index.tmpl", gin.H{
 			"title": "Upload Page",
 		})
 	})
 	router.POST("/", upload)
+	conf := cors.DefaultConfig()
+	conf.AllowOrigins = []string{"*"}
+	conf.AddAllowHeaders("X-ROUTING-KEY")
+	conf.AddAllowHeaders("Content-Type")
+	conf.AddAllowHeaders("Access-Control-Allow-Origin")
+	conf.AddAllowHeaders("Access-Control-Allow-Headers")
+	conf.AddAllowHeaders("Access-Control-Allow-Methods")
+	conf.AddAllowHeaders("Host")
+	router.Use(cors.New(conf))
 	router.Run("0.0.0.0:23061")
 }
