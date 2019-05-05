@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"io"
 
-	// "log"
-	"fmt"
-	"io/ioutil"
-	"math/rand"
+	"log"
 	"net/http"
-	"path/filepath"
 
 	// "mime/multipart"
 	// "time"
@@ -29,13 +24,6 @@ type appError struct {
 
 var files map[string]string
 
-// TokenGenerator generates token for as key for downloading
-func TokenGenerator() string {
-	b := make([]byte, 18)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
-}
-
 // CSVToMap reads csv to map
 func CSVToMap(reader io.Reader, arr map[string]string) (map[string]string, error) {
 	r := csv.NewReader(reader)
@@ -50,6 +38,7 @@ func CSVToMap(reader io.Reader, arr map[string]string) (map[string]string, error
 		}
 		arr[record[0]] = record[1]
 	}
+	log.Println(arr)
 	return arr, err
 }
 
@@ -59,14 +48,6 @@ func download(c *gin.Context) {
 	c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, X-Routing-Key, Host")
 
 	id := c.Param("id")
-
-	if _, ok := files[id]; !ok {
-		c.JSON(http.StatusNotFound, appError{
-			Code:    http.StatusNotFound,
-			Message: "File not found, have you uploaded it here?",
-		})
-		return
-	}
 
 	csvf := "dl/list.csv"
 	f, err := os.Open(csvf)
@@ -78,17 +59,34 @@ func download(c *gin.Context) {
 		return
 	}
 	defer f.Close()
-	files, err := CSVToMap(f, files)
+	log.Println("File Opened")
+	files, err = CSVToMap(f, files)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, appError{
 			Code:    http.StatusInternalServerError,
-			Message: "Index file corrupted",
+			Message: err.Error(),
+		})
+		return
+	}
+
+	if _, ok := files[id]; !ok {
+		c.JSON(http.StatusNotFound, appError{
+			Code:    http.StatusNotFound,
+			Message: "File not found, have you uploaded it here?",
 		})
 		return
 	}
 
 	targetFile := files[id]
 	fileName := strings.Replace(targetFile, "dl/", "", -1)
+
+	if _, err := os.Stat(targetFile); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, appError{
+			Code:    http.StatusNotFound,
+			Message: "File not found, file may perhaps have been moved or removed",
+		})
+		return
+	}
 
 	c.Header("Content-Description", "File Transfer")
 	c.Header("Content-Transfer-Encoding", "binary")
@@ -98,59 +96,9 @@ func download(c *gin.Context) {
 	return
 }
 
-func upload(c *gin.Context) {
-	c.Header("Access-Control-Allow-Origin", "*")
-	c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, X-Routing-Key, Host")
-
-	fileHeader, err := c.FormFile("file")
-	if err != nil {
-		// log.Println(err)
-		c.JSON(http.StatusBadRequest, appError{
-			Code:    http.StatusBadRequest,
-			Message: "File get error, did you upload a file?",
-		})
-		return
-	}
-
-	file, err := fileHeader.Open()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, appError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
-		return
-	}
-	defer file.Close()
-
-	buf := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buf, file); err != nil {
-		c.JSON(http.StatusInternalServerError, appError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
-		return
-	}
-
-	sep := string(filepath.Separator)
-	filename := "dl/" + filepath.Base(sep+"dl"+sep+fileHeader.Filename)
-
-	err = ioutil.WriteFile(filename, buf.Bytes(), 0644)
-
-	key := TokenGenerator()
-	files[key] = filename
-
-	c.JSON(http.StatusOK, appError{
-		Code: http.StatusOK,
-		// Message:	os.getenv("PROXYURL") + "/download/" + key,
-		Message: "http://localhost/download/" + key,
-	})
-	return
-}
-
 func main() {
 	files = make(map[string]string)
-
+	log.Println(files)
 	if _, err := os.Stat("/dl"); os.IsNotExist(err) {
 		os.Mkdir("/dl", 0644)
 	}
@@ -158,7 +106,7 @@ func main() {
 	r := gin.Default()
 
 	r.GET("/dl/:id", download)
-	r.POST("/ul", upload)
+	// r.POST("/ul", upload)
 	conf := cors.DefaultConfig()
 	conf.AllowOrigins = []string{"*"}
 	conf.AddAllowHeaders("X-ROUTING-KEY")
