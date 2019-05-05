@@ -103,7 +103,7 @@ func upload(c *gin.Context) {
 	}
 
 	sep := string(filepath.Separator)
-	filename := "dl/" + filepath.Base(sep+"dl"+sep+fileHeader.Filename)
+	filename := "/dl/" + filepath.Base(sep+"dl"+sep+fileHeader.Filename)
 
 	err = ioutil.WriteFile(filename, buf.Bytes(), 0644)
 
@@ -111,7 +111,7 @@ func upload(c *gin.Context) {
 	files[key] = filename
 	log.Println(files[key])
 
-	csv, err := os.OpenFile("dl/list.csv", os.O_WRONLY, 0660)
+	csv, err := os.OpenFile("/dl/list.csv", os.O_WRONLY, 0660)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, appError{
 			Code:    http.StatusInternalServerError,
@@ -143,11 +143,11 @@ func main() {
 	}
 	files = make(map[string]string)
 
-	if _, err := os.Stat("dl/list.csv"); os.IsNotExist(err) {
-		f, _ := os.Create("dl/list.csv")
+	if _, err := os.Stat("/dl/list.csv"); os.IsNotExist(err) {
+		f, _ := os.Create("/dl/list.csv")
 		defer f.Close()
 	} else {
-		f, err := os.Open("dl/list.csv")
+		f, err := os.Open("/dl/list.csv")
 		if err != nil {
 			panic(err)
 		}

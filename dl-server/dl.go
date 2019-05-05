@@ -49,7 +49,7 @@ func download(c *gin.Context) {
 
 	id := c.Param("id")
 
-	csvf := "dl/list.csv"
+	csvf := "/dl/list.csv"
 	f, err := os.Open(csvf)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, appError{
@@ -78,7 +78,7 @@ func download(c *gin.Context) {
 	}
 
 	targetFile := files[id]
-	fileName := strings.Replace(targetFile, "dl/", "", -1)
+	fileName := strings.Replace(targetFile, "/dl/", "", -1)
 
 	if _, err := os.Stat(targetFile); os.IsNotExist(err) {
 		c.JSON(http.StatusNotFound, appError{

@@ -1,0 +1,37 @@
+#docker-compose.yaml
+version: "3.6"
+services:
+  nginx:
+    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-4-nginx:v1"
+    build: "./nginx"
+    ports:
+      - "22006:22006"
+    depends_on:
+      - "godlservice"
+      - "goulservice"
+    volumes:
+      - "1406568753-law-4-storage:/dl"
+    networks:
+      - "1406568753-law-4-network"
+  godlservice:
+    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-4-dl:v1"
+    build: "./dl-server"
+    ports:
+      - "23062:23062"
+    volumes:
+      - "1406568753-law-4-storage:/dl"
+    networks:
+      - "1406568753-law-4-network"
+  goulservice:
+    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-4-ul:v2"
+    build: "./ul-server"
+    ports:
+      - "23061:23061"
+    volumes:
+      - "1406568753-law-4-storage:/dl"
+    networks:
+      - "1406568753-law-4-network"
+volumes:
+  1406568753-law-4-storage:
+networks:
+  1406568753-law-4-network:
