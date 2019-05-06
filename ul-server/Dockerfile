@@ -1,6 +1,7 @@
 #Dockerfile
 #Step 1 Build
 FROM golang:1.11-alpine3.8 AS build
+ENV PROXYURL http://host-1406568753.proxy.infralabs.cs.ui.ac.id
 RUN apk --no-cache add gcc g++ make
 RUN apk add git
 WORKDIR /go/src/app
