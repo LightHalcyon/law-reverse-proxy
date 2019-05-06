@@ -132,7 +132,7 @@ func upload(c *gin.Context) {
 
 	c.JSON(http.StatusOK, appError{
 		Code: http.StatusOK,
-		Message:	os.getenv("PROXYURL") + "/download/" + key,
+		Message:	os.Getenv("PROXYURL") + "/download/" + key,
 		// Message: "http://localhost:22006/download/" + key,
 	})
 	return
