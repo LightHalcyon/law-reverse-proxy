@@ -1,37 +1,37 @@
 #docker-compose.yaml
 version: "3.6"
 services:
-  nginx:
-    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-4-nginx:v1"
+  nginx-cots3:
+    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-cots3-nginx:v1"
     build: "./nginx"
     ports:
-      - "22006:22006"
+      - "22106:22106"
     depends_on:
-      - "godlservice"
-      - "goulservice"
+      - "nginxdl-cots3"
+      - "goulservice-cots3"
     volumes:
-      - "1406568753-law-4-storage:/dl"
+      - "1406568753-law-cots3-storage:/dl"
     networks:
-      - "1406568753-law-4-network"
-  godlservice:
-    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-4-dl:v1"
+      - "1406568753-law-cots3-network"
+  nginxdl-cots3:
+    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-cots3-nginxdl:v1"
     build: "./dl-server"
     ports:
-      - "23062:23062"
+      - "23064:23064"
     volumes:
-      - "1406568753-law-4-storage:/dl"
+      - "1406568753-law-cots3-storage:/dl"
     networks:
-      - "1406568753-law-4-network"
-  goulservice:
-    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-4-ul:v2"
+      - "1406568753-law-cots3-network"
+  goulservice-cots3:
+    image: "registry.infralabs.cs.ui.ac.id/1406568753/law-cots3-ul:v1"
     build: "./ul-server"
     ports:
-      - "23061:23061"
+      - "23063:23063"
     volumes:
-      - "1406568753-law-4-storage:/dl"
+      - "1406568753-law-cots3-storage:/dl"
     networks:
-      - "1406568753-law-4-network"
+      - "1406568753-law-cots3-network"
 volumes:
-  1406568753-law-4-storage:
+  1406568753-law-cots3-storage:
 networks:
-  1406568753-law-4-network:
+  1406568753-law-cots3-network:

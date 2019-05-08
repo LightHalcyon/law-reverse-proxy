@@ -11,6 +11,10 @@ import (
 	"fmt"
 	"bytes"
 	"path/filepath"
+	"time"
+	"crypto/md5"
+	"strconv"
+	"encoding/hex"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
@@ -62,6 +66,13 @@ func MapToCSV(writer io.Writer, arr map[string]string) error {
 	return err
 }
 
+// GetMD5Hash hashes string with md5
+func GetMD5Hash(text string) string {
+    hasher := md5.New()
+    hasher.Write([]byte(text))
+    return hex.EncodeToString(hasher.Sum(nil))
+}
+
 // TokenGenerator generates token for as key for downloading
 func TokenGenerator() string {
 	b := make([]byte, 18)
@@ -73,6 +84,12 @@ func upload(c *gin.Context) {
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 	c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, X-Routing-Key, Host")
+
+	clientIP := c.ClientIP()
+	// clientIP := "127.0.0.1"
+	log.Println(clientIP)
+	timestamp := strconv.FormatInt(time.Now().UTC().Add(time.Hour * time.Duration(2)).Unix(), 10)
+	hash := GetMD5Hash(clientIP + " secret")
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
@@ -108,32 +125,32 @@ func upload(c *gin.Context) {
 
 	err = ioutil.WriteFile(filename, buf.Bytes(), 0644)
 
-	key := TokenGenerator()
-	files[key] = filename
-	log.Println(files[key])
+	// key := TokenGenerator()
+	// files[key] = filename
+	// log.Println(files[key])
 
-	csv, err := os.OpenFile("/dl/list.csv", os.O_WRONLY, 0660)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, appError{
-			Code:    http.StatusInternalServerError,
-			Message: "Index file corrupted",
-		})
-		return
-	}
-	defer csv.Close()
-	err = MapToCSV(csv, files)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, appError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
-		return
-	}
+	// csv, err := os.OpenFile("/dl/list.csv", os.O_WRONLY, 0660)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, appError{
+	// 		Code:    http.StatusInternalServerError,
+	// 		Message: "Index file corrupted",
+	// 	})
+	// 	return
+	// }
+	// defer csv.Close()
+	// err = MapToCSV(csv, files)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, appError{
+	// 		Code:    http.StatusInternalServerError,
+	// 		Message: err.Error(),
+	// 	})
+	// 	return
+	// }
 
 	c.JSON(http.StatusOK, appError{
 		Code: http.StatusOK,
-		Message:	os.Getenv("PROXYURL") + "/download/" + key,
-		// Message: "http://localhost:22006/download/" + key,
+		// Message:	os.Getenv("PROXYURL") + "/download/" + fileHeader.Filename +"?md5=" + hash + "&expires=" + timestamp,
+		Message: "http://localhost:22106/download/" + fileHeader.Filename +"?md5=" + hash + "&expires=" + timestamp,
 	})
 	return
 }
@@ -142,23 +159,23 @@ func main() {
 	if _, err := os.Stat("dl"); os.IsNotExist(err) {
 		os.Mkdir("dl", 0755)
 	}
-	files = make(map[string]string)
+	// files = make(map[string]string)
 
-	if _, err := os.Stat("/dl/list.csv"); os.IsNotExist(err) {
-		f, _ := os.Create("/dl/list.csv")
-		defer f.Close()
-	} else {
-		f, err := os.Open("/dl/list.csv")
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-		files, err = CSVToMap(f, files)
-		if err != nil {
-			panic(err)
-		}
-	}
-	log.Println(files)
+	// if _, err := os.Stat("/dl/list.csv"); os.IsNotExist(err) {
+	// 	f, _ := os.Create("/dl/list.csv")
+	// 	defer f.Close()
+	// } else {
+	// 	f, err := os.Open("/dl/list.csv")
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	defer f.Close()
+	// 	files, err = CSVToMap(f, files)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
+	// log.Println(files)
 
 	router := gin.Default()
 	router.Use(static.Serve("/static", static.LocalFile("static", true)))
@@ -181,5 +198,5 @@ func main() {
 	conf.AddAllowHeaders("Access-Control-Allow-Methods")
 	conf.AddAllowHeaders("Host")
 	router.Use(cors.New(conf))
-	router.Run("0.0.0.0:23061")
+	router.Run("0.0.0.0:23063")
 }
