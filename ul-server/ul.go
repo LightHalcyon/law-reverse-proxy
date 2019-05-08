@@ -14,7 +14,7 @@ import (
 	"time"
 	"crypto/md5"
 	"strconv"
-	"encoding/hex"
+	"encoding/base64"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
@@ -70,7 +70,7 @@ func MapToCSV(writer io.Writer, arr map[string]string) error {
 func GetMD5Hash(text string) string {
     hasher := md5.New()
     hasher.Write([]byte(text))
-    return hex.EncodeToString(hasher.Sum(nil))
+    return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
 // TokenGenerator generates token for as key for downloading
@@ -89,7 +89,7 @@ func upload(c *gin.Context) {
 	// clientIP := "127.0.0.1"
 	log.Println(clientIP)
 	timestamp := strconv.FormatInt(time.Now().UTC().Add(time.Hour * time.Duration(2)).Unix(), 10)
-	hash := GetMD5Hash(clientIP + " secret")
+	hash := GetMD5Hash(clientIP + timestamp + " secret")
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
